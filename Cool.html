@@ -1,654 +1,828 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weak Chess Engine</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #312e2b;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            flex-direction: column;
-        }
-        #game-container {
-            text-align: center;
-        }
-        #board {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            grid-template-rows: repeat(8, 1fr);
-            width: 480px;
-            height: 480px;
-            border: 3px solid #5d4e37;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-            margin: 0 auto 20px;
-        }
-        .square {
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            cursor: pointer;
-            user-select: none;
-            position: relative;
-            transition: background 0.1s;
-        }
-        .light {
-            background: #f0d9b5;
-        }
-        .dark {
-            background: #b58863;
-        }
-        .square.selected {
-            background: #829769 !important;
-        }
-        .square.legal-move::after {
-            content: "";
-            position: absolute;
-            width: 24px;
-            height: 24px;
-            background: radial-gradient(circle, rgba(0,0,0,0.35) 30%, transparent 35%);
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-        }
-        .square.last-move {
-            background: #cdd26a !important;
-        }
-        #status {
-            color: #fff;
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            min-height: 28px;
-        }
-        button {
-            padding: 10px 24px;
-            font-size: 1rem;
-            border: none;
-            background: #769656;
-            color: #fff;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            transition: background 0.2s;
-        }
-        button:hover {
-            background: #5d7a42;
-        }
-        button:disabled {
-            background: #555;
-            cursor: not-allowed;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>Calculus · responsive interactive</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    body {
+      background: #0b111e;
+      color: #eef4fc;
+      scroll-behavior: smooth;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .scroll-container {
+      width: 100%;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem 2.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    /* each page – flexible grid that adapts */
+    .page {
+      background: #141e2b;
+      border-radius: 2.2rem;
+      padding: 1.5rem 1.5rem 1.8rem;
+      border: 1px solid #2c4058;
+      box-shadow: 0 20px 40px -10px rgba(0,0,0,0.8);
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 1.5rem;
+      align-items: stretch;
+      transition: all 0.15s ease;
+      scroll-margin-top: 1rem;
+      width: 100%;
+    }
+
+    /* left: content */
+    .content-area {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 0.6rem;
+      min-width: 0;
+    }
+    .content-area h2 {
+      font-weight: 500;
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #b8d6ff, #6fa3ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+    }
+    .content-area .subhead {
+      font-size: clamp(0.75rem, 1.4vw, 0.95rem);
+      color: #93b3db;
+      background: #1e2d3e;
+      display: inline-block;
+      padding: 0.15rem 1rem;
+      border-radius: 30px;
+      border: 1px solid #3c5777;
+      align-self: flex-start;
+      white-space: nowrap;
+    }
+    .content-area .description {
+      background: #101b28;
+      padding: 0.8rem 1.2rem;
+      border-radius: 1.6rem;
+      border-left: 4px solid #4a7cdb;
+      line-height: 1.6;
+      color: #d2e3fa;
+      font-size: clamp(0.85rem, 1.3vw, 1rem);
+      flex: 1;
+      min-height: 60px;
+    }
+    .content-area .description strong {
+      color: #a6c8ff;
+    }
+
+    /* right: graph + controls */
+    .interaction-area {
+      background: #0e1724;
+      border-radius: 1.8rem;
+      padding: 0.6rem 0.6rem 0.8rem;
+      border: 1px solid #2a3f58;
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+    .graph-wrapper {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #0b121d;
+      border-radius: 1.4rem;
+      overflow: hidden;
+      cursor: crosshair;
+      min-height: 120px;
+    }
+    .graph-wrapper canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      image-rendering: auto;
+    }
+    .graph-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 12px;
+      background: rgba(8, 16, 28, 0.7);
+      backdrop-filter: blur(4px);
+      padding: 0.1rem 0.8rem;
+      border-radius: 40px;
+      font-size: clamp(0.55rem, 1vw, 0.7rem);
+      border: 1px solid #3f5a7a;
+      color: #b0cef5;
+      pointer-events: none;
+      letter-spacing: 0.2px;
+      white-space: nowrap;
+    }
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.2rem 0.1rem;
+      gap: 0.5rem 0.8rem;
+    }
+    .slider-group {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem 0.6rem;
+      flex-wrap: wrap;
+      flex: 1 1 auto;
+      min-width: 140px;
+    }
+    .slider-group label {
+      font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+      color: #b2cef0;
+      font-weight: 400;
+      white-space: nowrap;
+    }
+    .slider-group input[type="range"] {
+      flex: 1 1 80px;
+      min-width: 60px;
+      height: 4px;
+      background: #263a50;
+      border-radius: 10px;
+      -webkit-appearance: none;
+      appearance: none;
+      outline: none;
+      cursor: pointer;
+    }
+    .slider-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: clamp(14px, 2.2vw, 18px);
+      height: clamp(14px, 2.2vw, 18px);
+      border-radius: 50%;
+      background: #7aabff;
+      cursor: pointer;
+      border: 2px solid #dceaff;
+      box-shadow: 0 0 16px #3f7eff77;
+      transition: 0.08s;
+    }
+    .slider-group input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.12);
+      background: #9ac0ff;
+    }
+    .slider-group input[type="range"]::-moz-range-thumb {
+      width: clamp(14px, 2.2vw, 18px);
+      height: clamp(14px, 2.2vw, 18px);
+      border-radius: 50%;
+      background: #7aabff;
+      cursor: pointer;
+      border: 2px solid #dceaff;
+    }
+    .value-badge {
+      background: #1e2f42;
+      padding: 0.1rem 0.7rem;
+      border-radius: 30px;
+      font-size: clamp(0.7rem, 1.1vw, 0.85rem);
+      font-weight: 500;
+      color: #d4e6ff;
+      border: 1px solid #3e5a7c;
+      min-width: 48px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .formula-tag {
+      color: #90b3e0;
+      font-size: clamp(0.7rem, 1.1vw, 0.9rem);
+      background: #1a283a;
+      padding: 0.1rem 0.8rem;
+      border-radius: 30px;
+      border: 1px solid #3b5373;
+      white-space: nowrap;
+    }
+
+    /* responsive breakpoints */
+    @media (max-width: 820px) {
+      .page {
+        grid-template-columns: 1fr 1.2fr;
+        gap: 1rem;
+        padding: 1.2rem;
+      }
+      .content-area .description {
+        font-size: 0.9rem;
+        padding: 0.6rem 1rem;
+      }
+    }
+    @media (max-width: 650px) {
+      .page {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+        padding: 1rem;
+        border-radius: 1.8rem;
+      }
+      .interaction-area {
+        padding: 0.4rem 0.4rem 0.6rem;
+      }
+      .graph-wrapper {
+        aspect-ratio: 16 / 9;
+        min-height: 100px;
+      }
+      .control-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.4rem;
+      }
+      .slider-group {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+      .slider-group input[type="range"] {
+        flex: 1 1 100px;
+        min-width: 80px;
+      }
+      .formula-tag {
+        align-self: center;
+      }
+    }
+    @media (max-width: 400px) {
+      .scroll-container {
+        padding: 0.8rem 0.5rem 1.5rem;
+        gap: 1.5rem;
+      }
+      .page {
+        padding: 0.8rem;
+        border-radius: 1.4rem;
+      }
+      .content-area h2 {
+        font-size: 1.3rem;
+      }
+      .content-area .description {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.8rem;
+      }
+      .graph-wrapper {
+        aspect-ratio: 4 / 3;
+        min-height: 80px;
+      }
+      .slider-group input[type="range"] {
+        min-width: 60px;
+      }
+      .value-badge {
+        min-width: 40px;
+        font-size: 0.7rem;
+      }
+    }
+
+    /* extra tall screens: keep aspect ratio but allow more height */
+    @media (min-aspect-ratio: 1/1) and (max-height: 700px) {
+      .page {
+        padding: 0.8rem 1rem;
+        gap: 0.8rem;
+      }
+      .graph-wrapper {
+        aspect-ratio: 16 / 9;
+        min-height: 80px;
+      }
+      .content-area .description {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+        min-height: 40px;
+      }
+    }
+
+    .footnote {
+      text-align: center;
+      opacity: 0.5;
+      font-size: clamp(0.7rem, 1vw, 0.85rem);
+      border-top: 1px solid #1f3142;
+      padding-top: 1.8rem;
+      color: #8aa4c9;
+      margin-top: 0.5rem;
+    }
+  </style>
 </head>
 <body>
-    <div id="game-container">
-        <div id="status">Your turn (White)</div>
-        <div id="board"></div>
-        <button id="new-game-btn">New Game</button>
+<div class="scroll-container">
+
+  <!-- ========= PAGE 1 : LIMITS ========= -->
+  <section class="page">
+    <div class="content-area">
+      <div>
+        <h2>📐 Limits · approach</h2>
+        <span class="subhead">x → 0</span>
+      </div>
+      <div class="description">
+        <strong>🔹 Intuition:</strong> As <strong>x</strong> → 0, <strong>sin(x)/x</strong> → 1. 
+        Even though f(0) is undefined, the <em>limit</em> exists. Drag the slider.
+      </div>
     </div>
+    <div class="interaction-area">
+      <div class="graph-wrapper" id="g1">
+        <canvas id="c1"></canvas>
+        <div class="graph-badge">⬤ live</div>
+      </div>
+      <div class="control-row">
+        <div class="slider-group">
+          <label for="limSlider">x =</label>
+          <input type="range" id="limSlider" min="-2.2" max="2.2" step="0.01" value="0.8">
+          <span class="value-badge" id="limVal">0.80</span>
+        </div>
+        <span class="formula-tag">sin(x)/x</span>
+      </div>
+    </div>
+  </section>
 
-    <script>
-        (function() {
-            // ---------- Chess Engine (minimal but rules-compliant) ----------
-            class Chess {
-                constructor(fen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1') {
-                    this.loadFEN(fen);
-                }
+  <!-- ========= PAGE 2 : DERIVATIVE ========= -->
+  <section class="page">
+    <div class="content-area">
+      <div>
+        <h2>📈 Derivative · slope</h2>
+        <span class="subhead">tangent line</span>
+      </div>
+      <div class="description">
+        <strong>⚡ Slope = derivative:</strong> f'(x₀) is the tangent slope. 
+        Move the slider to see the tangent (orange) change.
+      </div>
+    </div>
+    <div class="interaction-area">
+      <div class="graph-wrapper" id="g2">
+        <canvas id="c2"></canvas>
+        <div class="graph-badge">✦ tangent</div>
+      </div>
+      <div class="control-row">
+        <div class="slider-group">
+          <label for="derivSlider">x₀ =</label>
+          <input type="range" id="derivSlider" min="-2.8" max="2.8" step="0.02" value="0.7">
+          <span class="value-badge" id="derivVal">0.70</span>
+        </div>
+        <span class="formula-tag">x³ – 2x</span>
+      </div>
+    </div>
+  </section>
 
-                loadFEN(fen) {
-                    const parts = fen.split(' ');
-                    this.board = Array.from({ length: 8 }, () => Array(8).fill(null));
-                    const rows = parts[0].split('/');
-                    for (let r = 0; r < 8; r++) {
-                        let c = 0;
-                        for (const ch of rows[r]) {
-                            if (ch >= '1' && ch <= '8') {
-                                c += parseInt(ch);
-                            } else {
-                                this.board[r][c] = ch;
-                                c++;
-                            }
-                        }
-                    }
-                    this.turn = parts[1]; // 'w' or 'b'
-                    this.castling = parts[2]; // e.g., 'KQkq'
-                    this.enPassant = parts[3]; // square e.g., 'e3' or '-'
-                    this.halfMoves = parseInt(parts[4]);
-                    this.fullMoves = parseInt(parts[5]);
-                }
+  <!-- ========= PAGE 3 : INTEGRAL ========= -->
+  <section class="page">
+    <div class="content-area">
+      <div>
+        <h2>🧮 Integral · area</h2>
+        <span class="subhead">Riemann sum</span>
+      </div>
+      <div class="description">
+        <strong>📦 Area under curve:</strong> Shaded region from 0 to <strong>b</strong>. 
+        Move the slider to change the upper bound.
+      </div>
+    </div>
+    <div class="interaction-area">
+      <div class="graph-wrapper" id="g3">
+        <canvas id="c3"></canvas>
+        <div class="graph-badge">▦ accumulate</div>
+      </div>
+      <div class="control-row">
+        <div class="slider-group">
+          <label for="intSlider">b =</label>
+          <input type="range" id="intSlider" min="-0.5" max="3.2" step="0.02" value="1.2">
+          <span class="value-badge" id="intVal">1.20</span>
+        </div>
+        <span class="formula-tag">∫₀ᵇ (cos x + 1)</span>
+      </div>
+    </div>
+  </section>
 
-                clone() {
-                    const cloned = new Chess();
-                    cloned.board = this.board.map(row => [...row]);
-                    cloned.turn = this.turn;
-                    cloned.castling = this.castling;
-                    cloned.enPassant = this.enPassant;
-                    cloned.halfMoves = this.halfMoves;
-                    cloned.fullMoves = this.fullMoves;
-                    return cloned;
-                }
+  <!-- ========= PAGE 4 : CHAIN RULE ========= -->
+  <section class="page">
+    <div class="content-area">
+      <div>
+        <h2>🔗 Chain rule · composition</h2>
+        <span class="subhead">inner / outer</span>
+      </div>
+      <div class="description">
+        <strong>🧩 Composite:</strong> f(g(x)) with <strong>g(x)=x²</strong>, <strong>f(u)=sin(u)</strong>. 
+        Derivative shown live.
+      </div>
+    </div>
+    <div class="interaction-area">
+      <div class="graph-wrapper" id="g4">
+        <canvas id="c4"></canvas>
+        <div class="graph-badge">◈ composition</div>
+      </div>
+      <div class="control-row">
+        <div class="slider-group">
+          <label for="chainSlider">x =</label>
+          <input type="range" id="chainSlider" min="-2.5" max="2.5" step="0.02" value="0.9">
+          <span class="value-badge" id="chainVal">0.90</span>
+        </div>
+        <span class="formula-tag">sin(x²)</span>
+      </div>
+    </div>
+  </section>
 
-                getPieces(color) {
-                    const pieces = [];
-                    for (let r = 0; r < 8; r++) {
-                        for (let c = 0; c < 8; c++) {
-                            const p = this.board[r][c];
-                            if (p && this.color(p) === color) pieces.push({ row: r, col: c, piece: p });
-                        }
-                    }
-                    return pieces;
-                }
+  <!-- ========= PAGE 5 : TAYLOR ========= -->
+  <section class="page">
+    <div class="content-area">
+      <div>
+        <h2>🌀 Taylor · approximation</h2>
+        <span class="subhead">polynomial fit</span>
+      </div>
+      <div class="description">
+        <strong>📊 Linear vs cubic:</strong> Taylor polynomials approximate <strong>eˣ</strong> around 0. 
+        Drag to see accuracy.
+      </div>
+    </div>
+    <div class="interaction-area">
+      <div class="graph-wrapper" id="g5">
+        <canvas id="c5"></canvas>
+        <div class="graph-badge">≈ approx</div>
+      </div>
+      <div class="control-row">
+        <div class="slider-group">
+          <label for="taylorSlider">x =</label>
+          <input type="range" id="taylorSlider" min="-2.0" max="2.0" step="0.02" value="0.6">
+          <span class="value-badge" id="taylorVal">0.60</span>
+        </div>
+        <span class="formula-tag">eˣ · T₁ & T₃</span>
+      </div>
+    </div>
+  </section>
 
-                color(piece) {
-                    return piece === piece.toUpperCase() ? 'w' : 'b';
-                }
+  <!-- ========= PAGE 6 : OPTIMIZATION ========= -->
+  <section class="page">
+    <div class="content-area">
+      <div>
+        <h2>🎯 Optimization · extrema</h2>
+        <span class="subhead">derivative zero</span>
+      </div>
+      <div class="description">
+        <strong>📍 Critical points:</strong> f(x) = x³ – 3x. Where derivative = 0, 
+        we find local max/min.
+      </div>
+    </div>
+    <div class="interaction-area">
+      <div class="graph-wrapper" id="g6">
+        <canvas id="c6"></canvas>
+        <div class="graph-badge">▲ extrema</div>
+      </div>
+      <div class="control-row">
+        <div class="slider-group">
+          <label for="optSlider">x =</label>
+          <input type="range" id="optSlider" min="-2.5" max="2.5" step="0.02" value="0.2">
+          <span class="value-badge" id="optVal">0.20</span>
+        </div>
+        <span class="formula-tag">x³ – 3x</span>
+      </div>
+    </div>
+  </section>
 
-                isWhite(piece) { return piece === piece.toUpperCase(); }
+  <div class="footnote">⬇️ scroll · each page is a complete calculus lesson with live graph</div>
+</div>
 
-                inBounds(r, c) {
-                    return r >= 0 && r < 8 && c >= 0 && c < 8;
-                }
+<script>
+  (function() {
+    // ---------- helpers ----------
+    function setupCanvas(containerId) {
+      const container = document.getElementById(containerId);
+      const canvas = container.querySelector('canvas');
+      const rect = container.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      return { canvas, ctx, w, h };
+    }
 
-                // Generate pseudo-legal moves (may leave king in check)
-                generatePseudoMoves(color) {
-                    const moves = [];
-                    const pieces = this.getPieces(color);
-                    for (const { row, col, piece } of pieces) {
-                        const type = piece.toUpperCase();
-                        switch (type) {
-                            case 'P': this.pawnMoves(row, col, color, moves); break;
-                            case 'N': this.knightMoves(row, col, color, moves); break;
-                            case 'B': this.slidingMoves(row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1]], moves); break;
-                            case 'R': this.slidingMoves(row, col, color, [[1,0],[-1,0],[0,1],[0,-1]], moves); break;
-                            case 'Q': this.slidingMoves(row, col, color, [[1,1],[1,-1],[-1,1],[-1,-1],[1,0],[-1,0],[0,1],[0,-1]], moves); break;
-                            case 'K': this.kingMoves(row, col, color, moves); break;
-                        }
-                    }
-                    return moves;
-                }
+    // ---------- PAGE 1 : LIMIT sin(x)/x ----------
+    function drawLimit(canvas, ctx, w, h, xVal) {
+      ctx.clearRect(0, 0, w, h);
+      const xMin = -3.2, xMax = 3.2, yMin = -0.8, yMax = 1.6;
+      function toX(x) { return (x - xMin) / (xMax - xMin) * w; }
+      function toY(y) { return h - (y - yMin) / (yMax - yMin) * h; }
+      ctx.strokeStyle = '#25364a';
+      ctx.lineWidth = 0.6;
+      for (let x = -3; x <= 3; x+=1) { ctx.beginPath(); ctx.moveTo(toX(x),0); ctx.lineTo(toX(x),h); ctx.stroke(); }
+      for (let y = -0.5; y <= 1.5; y+=0.5) { ctx.beginPath(); ctx.moveTo(0,toY(y)); ctx.lineTo(w,toY(y)); ctx.stroke(); }
+      ctx.strokeStyle = '#5f7fa0';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(toX(0),0); ctx.lineTo(toX(0),h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,toY(0)); ctx.lineTo(w,toY(0)); ctx.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = '#70b8ff';
+      ctx.lineWidth = 3.0;
+      let first = true;
+      for (let px = 0; px <= w; px+=0.5) {
+        const x = xMin + (px / w) * (xMax - xMin);
+        let y = (Math.abs(x) < 1e-8) ? 1 : Math.sin(x) / x;
+        const sy = toY(y);
+        if (first) { ctx.moveTo(px, sy); first = false; } else ctx.lineTo(px, sy);
+      }
+      ctx.stroke();
+      let fx = (Math.abs(xVal) < 1e-8) ? 1 : Math.sin(xVal) / xVal;
+      const sx = toX(xVal), sy = toY(fx);
+      ctx.shadowColor = '#8abaff';
+      ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.arc(sx, sy, Math.min(6, w/40), 0, 2*Math.PI); ctx.fillStyle = '#ffcf8a'; ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#d2e5ff';
+      ctx.font = `bold ${Math.min(14, w/35)}px "Segoe UI"`;
+      ctx.fillText(`f(${xVal.toFixed(2)}) = ${fx.toFixed(4)}`, sx+10, sy-12);
+    }
 
-                pawnMoves(r, c, color, moves) {
-                    const forward = color === 'w' ? -1 : 1;
-                    const startRow = color === 'w' ? 6 : 1;
-                    const promoRow = color === 'w' ? 0 : 7;
-                    // single push
-                    if (this.inBounds(r + forward, c) && !this.board[r + forward][c]) {
-                        this.addPawnMove(r, c, r + forward, c, promoRow, moves);
-                        // double push
-                        if (r === startRow && !this.board[r + 2 * forward][c]) {
-                            moves.push({ fromRow: r, fromCol: c, toRow: r + 2 * forward, toCol: c, promotion: null });
-                        }
-                    }
-                    // captures
-                    for (const dc of [-1, 1]) {
-                        const nr = r + forward, nc = c + dc;
-                        if (this.inBounds(nr, nc)) {
-                            if (this.board[nr][nc] && this.color(this.board[nr][nc]) !== color) {
-                                this.addPawnMove(r, c, nr, nc, promoRow, moves);
-                            }
-                            // en passant
-                            if (this.enPassant !== '-' && nr === this.epRow() && nc === this.epCol()) {
-                                moves.push({ fromRow: r, fromCol: c, toRow: nr, toCol: nc, promotion: null, enPassant: true });
-                            }
-                        }
-                    }
-                }
+    // ---------- PAGE 2 : DERIVATIVE ----------
+    function drawDerivative(canvas, ctx, w, h, x0) {
+      ctx.clearRect(0, 0, w, h);
+      const xMin = -3.2, xMax = 3.2, yMin = -4.8, yMax = 4.8;
+      function toX(x) { return (x - xMin) / (xMax - xMin) * w; }
+      function toY(y) { return h - (y - yMin) / (yMax - yMin) * h; }
+      ctx.strokeStyle = '#25364a';
+      ctx.lineWidth = 0.6;
+      for (let x = -3; x <= 3; x+=1) { ctx.beginPath(); ctx.moveTo(toX(x),0); ctx.lineTo(toX(x),h); ctx.stroke(); }
+      for (let y = -4; y <= 4; y+=1) { ctx.beginPath(); ctx.moveTo(0,toY(y)); ctx.lineTo(w,toY(y)); ctx.stroke(); }
+      ctx.strokeStyle = '#5f7fa0';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(toX(0),0); ctx.lineTo(toX(0),h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,toY(0)); ctx.lineTo(w,toY(0)); ctx.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = '#70b8ff';
+      ctx.lineWidth = 3.0;
+      let first = true;
+      for (let px = 0; px <= w; px+=0.5) {
+        const x = xMin + (px / w) * (xMax - xMin);
+        const y = x*x*x - 2*x;
+        const sy = toY(y);
+        if (first) { ctx.moveTo(px, sy); first = false; } else ctx.lineTo(px, sy);
+      }
+      ctx.stroke();
+      const slope = 3*x0*x0 - 2;
+      const y0 = x0*x0*x0 - 2*x0;
+      const dx = 0.8;
+      ctx.beginPath();
+      ctx.strokeStyle = '#ffa55c';
+      ctx.lineWidth = 3.0;
+      ctx.setLineDash([6, 6]);
+      ctx.moveTo(toX(x0-dx), toY(y0 + slope*(-dx)));
+      ctx.lineTo(toX(x0+dx), toY(y0 + slope*(dx)));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const sx = toX(x0), sy = toY(y0);
+      ctx.shadowColor = '#ffb07c';
+      ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.arc(sx, sy, Math.min(6, w/40), 0, 2*Math.PI); ctx.fillStyle = '#ffcf8a'; ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#d2e5ff';
+      ctx.font = `bold ${Math.min(14, w/35)}px "Segoe UI"`;
+      ctx.fillText(`f'(${x0.toFixed(2)}) = ${slope.toFixed(4)}`, sx+10, sy-14);
+    }
 
-                addPawnMove(r, c, nr, nc, promoRow, moves) {
-                    if (nr === promoRow) {
-                        // always promote to queen
-                        moves.push({ fromRow: r, fromCol: c, toRow: nr, toCol: nc, promotion: 'q' });
-                    } else {
-                        moves.push({ fromRow: r, fromCol: c, toRow: nr, toCol: nc, promotion: null });
-                    }
-                }
+    // ---------- PAGE 3 : INTEGRAL ----------
+    function drawIntegral(canvas, ctx, w, h, b) {
+      ctx.clearRect(0, 0, w, h);
+      const xMin = -2.0, xMax = 3.4, yMin = -0.6, yMax = 2.8;
+      function toX(x) { return (x - xMin) / (xMax - xMin) * w; }
+      function toY(y) { return h - (y - yMin) / (yMax - yMin) * h; }
+      ctx.strokeStyle = '#25364a';
+      ctx.lineWidth = 0.6;
+      for (let x = -2; x <= 3; x+=1) { ctx.beginPath(); ctx.moveTo(toX(x),0); ctx.lineTo(toX(x),h); ctx.stroke(); }
+      for (let y = 0; y <= 2.5; y+=0.5) { ctx.beginPath(); ctx.moveTo(0,toY(y)); ctx.lineTo(w,toY(y)); ctx.stroke(); }
+      ctx.strokeStyle = '#5f7fa0';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(toX(0),0); ctx.lineTo(toX(0),h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,toY(0)); ctx.lineTo(w,toY(0)); ctx.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = '#70b8ff';
+      ctx.lineWidth = 3.0;
+      let first = true;
+      for (let px = 0; px <= w; px+=0.5) {
+        const x = xMin + (px / w) * (xMax - xMin);
+        const y = Math.cos(x) + 1;
+        const sy = toY(y);
+        if (first) { ctx.moveTo(px, sy); first = false; } else ctx.lineTo(px, sy);
+      }
+      ctx.stroke();
+      const bClamp = Math.min(Math.max(b, 0), 3.0);
+      if (bClamp > 0) {
+        const x0 = toX(0), x1 = toX(bClamp);
+        ctx.fillStyle = '#3f7eff44';
+        ctx.beginPath();
+        ctx.moveTo(x0, toY(0));
+        for (let px = x0; px <= x1; px+=0.5) {
+          const x = xMin + (px / w) * (xMax - xMin);
+          ctx.lineTo(px, toY(Math.cos(x)+1));
+        }
+        ctx.lineTo(x1, toY(0));
+        ctx.closePath();
+        ctx.fill();
+        let steps = 80, sum = 0;
+        for (let i = 0; i <= steps; i++) {
+          const t = (i / steps) * bClamp;
+          const f = Math.cos(t) + 1;
+          if (i===0 || i===steps) sum += f;
+          else if (i%2===1) sum += 4*f;
+          else sum += 2*f;
+        }
+        const area = (bClamp / (3*steps)) * sum;
+        ctx.fillStyle = '#d2e5ff';
+        ctx.font = `bold ${Math.min(15, w/30)}px "Segoe UI"`;
+        ctx.fillText(`∫₀ᵇ = ${area.toFixed(4)}`, x0 + 12, 40);
+      }
+      const bx = toX(bClamp), by = toY(Math.cos(bClamp)+1);
+      ctx.shadowColor = '#8abaff';
+      ctx.shadowBlur = 16;
+      ctx.beginPath(); ctx.arc(bx, by, Math.min(6, w/40), 0, 2*Math.PI); ctx.fillStyle = '#ffcf8a'; ctx.fill();
+      ctx.shadowBlur = 0;
+    }
 
-                knightMoves(r, c, color, moves) {
-                    const deltas = [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
-                    for (const [dr, dc] of deltas) {
-                        const nr = r + dr, nc = c + dc;
-                        if (this.inBounds(nr, nc) && (!this.board[nr][nc] || this.color(this.board[nr][nc]) !== color)) {
-                            moves.push({ fromRow: r, fromCol: c, toRow: nr, toCol: nc, promotion: null });
-                        }
-                    }
-                }
+    // ---------- PAGE 4 : CHAIN RULE ----------
+    function drawChain(canvas, ctx, w, h, xVal) {
+      ctx.clearRect(0, 0, w, h);
+      const xMin = -3.0, xMax = 3.0, yMin = -1.8, yMax = 1.8;
+      function toX(x) { return (x - xMin) / (xMax - xMin) * w; }
+      function toY(y) { return h - (y - yMin) / (yMax - yMin) * h; }
+      ctx.strokeStyle = '#25364a';
+      ctx.lineWidth = 0.6;
+      for (let x = -3; x <= 3; x+=1) { ctx.beginPath(); ctx.moveTo(toX(x),0); ctx.lineTo(toX(x),h); ctx.stroke(); }
+      for (let y = -1.5; y <= 1.5; y+=0.5) { ctx.beginPath(); ctx.moveTo(0,toY(y)); ctx.lineTo(w,toY(y)); ctx.stroke(); }
+      ctx.strokeStyle = '#5f7fa0';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(toX(0),0); ctx.lineTo(toX(0),h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,toY(0)); ctx.lineTo(w,toY(0)); ctx.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = '#70b8ff';
+      ctx.lineWidth = 3.0;
+      let first = true;
+      for (let px = 0; px <= w; px+=0.5) {
+        const x = xMin + (px / w) * (xMax - xMin);
+        const y = Math.sin(x*x);
+        const sy = toY(y);
+        if (first) { ctx.moveTo(px, sy); first = false; } else ctx.lineTo(px, sy);
+      }
+      ctx.stroke();
+      const y0 = Math.sin(xVal*xVal);
+      const deriv = 2 * xVal * Math.cos(xVal*xVal);
+      const sx = toX(xVal), sy = toY(y0);
+      ctx.shadowColor = '#ffb07c';
+      ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.arc(sx, sy, Math.min(6, w/40), 0, 2*Math.PI); ctx.fillStyle = '#ffcf8a'; ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#d2e5ff';
+      ctx.font = `bold ${Math.min(14, w/35)}px "Segoe UI"`;
+      ctx.fillText(`f' = ${deriv.toFixed(4)}`, sx+10, sy-14);
+    }
 
-                slidingMoves(r, c, color, directions, moves) {
-                    for (const [dr, dc] of directions) {
-                        let nr = r + dr, nc = c + dc;
-                        while (this.inBounds(nr, nc)) {
-                            if (!this.board[nr][nc]) {
-                                moves.push({ fromRow: r, fromCol: c, toRow: nr, toCol: nc, promotion: null });
-                            } else {
-                                if (this.color(this.board[nr][nc]) !== color) {
-                                    moves.push({ fromRow: r, fromCol: c, toRow: nr, toCol: nc, promotion: null });
-                                }
-                                break;
-                            }
-                            nr += dr;
-                            nc += dc;
-                        }
-                    }
-                }
+    // ---------- PAGE 5 : TAYLOR ----------
+    function drawTaylor(canvas, ctx, w, h, xVal) {
+      ctx.clearRect(0, 0, w, h);
+      const xMin = -2.8, xMax = 2.8, yMin = -0.8, yMax = 4.2;
+      function toX(x) { return (x - xMin) / (xMax - xMin) * w; }
+      function toY(y) { return h - (y - yMin) / (yMax - yMin) * h; }
+      ctx.strokeStyle = '#25364a';
+      ctx.lineWidth = 0.6;
+      for (let x = -2; x <= 2; x+=1) { ctx.beginPath(); ctx.moveTo(toX(x),0); ctx.lineTo(toX(x),h); ctx.stroke(); }
+      for (let y = 0; y <= 4; y+=1) { ctx.beginPath(); ctx.moveTo(0,toY(y)); ctx.lineTo(w,toY(y)); ctx.stroke(); }
+      ctx.strokeStyle = '#5f7fa0';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(toX(0),0); ctx.lineTo(toX(0),h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,toY(0)); ctx.lineTo(w,toY(0)); ctx.stroke();
+      // e^x dashed
+      ctx.beginPath();
+      ctx.strokeStyle = '#5f8fc9';
+      ctx.lineWidth = 2.0;
+      ctx.setLineDash([4, 6]);
+      let first = true;
+      for (let px = 0; px <= w; px+=0.5) {
+        const x = xMin + (px / w) * (xMax - xMin);
+        const y = Math.exp(x);
+        const sy = toY(y);
+        if (first) { ctx.moveTo(px, sy); first = false; } else ctx.lineTo(px, sy);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      // T1
+      ctx.beginPath();
+      ctx.strokeStyle = '#ffa55c';
+      ctx.lineWidth = 2.2;
+      for (let px = 0; px <= w; px+=0.5) {
+        const x = xMin + (px / w) * (xMax - xMin);
+        const y = 1 + x;
+        const sy = toY(y);
+        if (px===0) ctx.moveTo(px, sy); else ctx.lineTo(px, sy);
+      }
+      ctx.stroke();
+      // T3
+      ctx.beginPath();
+      ctx.strokeStyle = '#b28bff';
+      ctx.lineWidth = 2.6;
+      for (let px = 0; px <= w; px+=0.5) {
+        const x = xMin + (px / w) * (xMax - xMin);
+        const y = 1 + x + x*x/2 + x*x*x/6;
+        const sy = toY(y);
+        if (px===0) ctx.moveTo(px, sy); else ctx.lineTo(px, sy);
+      }
+      ctx.stroke();
+      ctx.fillStyle = '#c0d6f0';
+      ctx.font = `${Math.min(12, w/45)}px "Segoe UI"`;
+      ctx.fillText('eˣ (dashed)', 10, 30);
+      ctx.fillStyle = '#ffa55c';
+      ctx.fillText('T₁', 10, 50);
+      ctx.fillStyle = '#b28bff';
+      ctx.fillText('T₃', 10, 70);
+      const ey = Math.exp(xVal);
+      const sy2 = toY(ey);
+      ctx.shadowColor = '#8abaff';
+      ctx.shadowBlur = 14;
+      ctx.beginPath(); ctx.arc(toX(xVal), sy2, Math.min(5, w/45), 0, 2*Math.PI); ctx.fillStyle = '#ffcf8a'; ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#d2e5ff';
+      ctx.font = `bold ${Math.min(13, w/35)}px "Segoe UI"`;
+      ctx.fillText(`e^${xVal.toFixed(2)} = ${ey.toFixed(4)}`, toX(xVal)+8, sy2-10);
+    }
 
-                kingMoves(r, c, color, moves) {
-                    const deltas = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-                    for (const [dr, dc] of deltas) {
-                        const nr = r + dr, nc = c + dc;
-                        if (this.inBounds(nr, nc) && (!this.board[nr][nc] || this.color(this.board[nr][nc]) !== color)) {
-                            moves.push({ fromRow: r, fromCol: c, toRow: nr, toCol: nc, promotion: null });
-                        }
-                    }
-                    // castling
-                    const backRank = color === 'w' ? 7 : 0;
-                    if (r === backRank && c === 4) {
-                        // kingside
-                        if (this.canCastle(color, 'k')) {
-                            const kingToCol = 6;
-                            if (!this.board[backRank][5] && !this.board[backRank][6]) {
-                                if (!this.squareAttacked(backRank, 4, color === 'w' ? 'b' : 'w') &&
-                                    !this.squareAttacked(backRank, 5, color === 'w' ? 'b' : 'w') &&
-                                    !this.squareAttacked(backRank, 6, color === 'w' ? 'b' : 'w')) {
-                                    moves.push({ fromRow: r, fromCol: c, toRow: backRank, toCol: kingToCol, promotion: null, castle: 'k' });
-                                }
-                            }
-                        }
-                        // queenside
-                        if (this.canCastle(color, 'q')) {
-                            if (!this.board[backRank][3] && !this.board[backRank][2] && !this.board[backRank][1]) {
-                                if (!this.squareAttacked(backRank, 4, color === 'w' ? 'b' : 'w') &&
-                                    !this.squareAttacked(backRank, 3, color === 'w' ? 'b' : 'w') &&
-                                    !this.squareAttacked(backRank, 2, color === 'w' ? 'b' : 'w')) {
-                                    moves.push({ fromRow: r, fromCol: c, toRow: backRank, toCol: 2, promotion: null, castle: 'q' });
-                                }
-                            }
-                        }
-                    }
-                }
+    // ---------- PAGE 6 : OPTIMIZATION ----------
+    function drawOptimization(canvas, ctx, w, h, xVal) {
+      ctx.clearRect(0, 0, w, h);
+      const xMin = -3.2, xMax = 3.2, yMin = -4.5, yMax = 4.5;
+      function toX(x) { return (x - xMin) / (xMax - xMin) * w; }
+      function toY(y) { return h - (y - yMin) / (yMax - yMin) * h; }
+      ctx.strokeStyle = '#25364a';
+      ctx.lineWidth = 0.6;
+      for (let x = -3; x <= 3; x+=1) { ctx.beginPath(); ctx.moveTo(toX(x),0); ctx.lineTo(toX(x),h); ctx.stroke(); }
+      for (let y = -4; y <= 4; y+=1) { ctx.beginPath(); ctx.moveTo(0,toY(y)); ctx.lineTo(w,toY(y)); ctx.stroke(); }
+      ctx.strokeStyle = '#5f7fa0';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.moveTo(toX(0),0); ctx.lineTo(toX(0),h); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,toY(0)); ctx.lineTo(w,toY(0)); ctx.stroke();
+      ctx.beginPath();
+      ctx.strokeStyle = '#70b8ff';
+      ctx.lineWidth = 3.0;
+      let first = true;
+      for (let px = 0; px <= w; px+=0.5) {
+        const x = xMin + (px / w) * (xMax - xMin);
+        const y = x*x*x - 3*x;
+        const sy = toY(y);
+        if (first) { ctx.moveTo(px, sy); first = false; } else ctx.lineTo(px, sy);
+      }
+      ctx.stroke();
+      ctx.fillStyle = '#ffb07c';
+      ctx.font = `${Math.min(12, w/45)}px "Segoe UI"`;
+      ctx.fillText('max', toX(-1)-10, toY(2)-10);
+      ctx.fillText('min', toX(1)-8, toY(-2)+18);
+      const y0 = xVal*xVal*xVal - 3*xVal;
+      const sx = toX(xVal), sy = toY(y0);
+      ctx.shadowColor = '#ffb07c';
+      ctx.shadowBlur = 18;
+      ctx.beginPath(); ctx.arc(sx, sy, Math.min(6, w/40), 0, 2*Math.PI); ctx.fillStyle = '#ffcf8a'; ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#d2e5ff';
+      ctx.font = `bold ${Math.min(14, w/35)}px "Segoe UI"`;
+      const deriv = 3*xVal*xVal - 3;
+      ctx.fillText(`f' = ${deriv.toFixed(4)}`, sx+10, sy-14);
+    }
 
-                canCastle(color, side) {
-                    const rights = this.castling;
-                    const key = color === 'w' ? (side === 'k' ? 'K' : 'Q') : (side === 'k' ? 'k' : 'q');
-                    return rights.includes(key);
-                }
+    // -------- INIT all pages --------
+    function initPage(sliderId, valId, drawFn, canvasId) {
+      const slider = document.getElementById(sliderId);
+      const display = document.getElementById(valId);
+      let { canvas, ctx, w, h } = setupCanvas(canvasId);
+      function update() {
+        const val = parseFloat(slider.value);
+        display.textContent = val.toFixed(2);
+        drawFn(canvas, ctx, w, h, val);
+      }
+      slider.addEventListener('input', update);
+      window.addEventListener('resize', () => {
+        const res = setupCanvas(canvasId);
+        canvas = res.canvas; ctx = res.ctx; w = res.w; h = res.h;
+        update();
+      });
+      update();
+    }
 
-                epRow() { return this.enPassant !== '-' ? 8 - parseInt(this.enPassant[1]) : -1; }
-                epCol() { return this.enPassant !== '-' ? this.enPassant.charCodeAt(0) - 97 : -1; }
+    initPage('limSlider', 'limVal', drawLimit, 'g1');
+    initPage('derivSlider', 'derivVal', drawDerivative, 'g2');
+    initPage('intSlider', 'intVal', drawIntegral, 'g3');
+    initPage('chainSlider', 'chainVal', drawChain, 'g4');
+    initPage('taylorSlider', 'taylorVal', drawTaylor, 'g5');
+    initPage('optSlider', 'optVal', drawOptimization, 'g6');
 
-                // Check if square (r,c) is attacked by attackerColor
-                squareAttacked(r, c, attackerColor) {
-                    // pawns
-                    const pawnDir = attackerColor === 'w' ? 1 : -1; // white attacks upward? Actually white pawn attacks from bottom upward: white pawn at row r+1 attacks row r (down)? Wait: white pawn moves forward -1, so attacks diagonally forward-left/right are to row-1 and col±1. So from attacker perspective, a white pawn attacks squares (r-1,c±1) relative to its position. So to see if (r,c) is attacked by a white pawn, we check if there is a white pawn at (r+1, c-1) or (r+1, c+1). So forwardAttacker = attackerColor === 'w' ? -1 : 1? Let's define: white pawns move from high row to low row (row 7 to 0), so forward is -1. So a white pawn at (rr,cc) attacks (rr-1, cc-1) and (rr-1, cc+1). So target (r,c) is attacked if there is a white pawn at (r+1, c-1) or (r+1, c+1). For black pawns, forward is +1, so black pawn at (rr,cc) attacks (rr+1, cc-1) and (rr+1, cc+1). So target attacked if black pawn at (r-1, c-1) or (r-1, c+1). So direction = attackerColor === 'w' ? 1 : -1. Let's implement.
-                    const pawnAttackDir = attackerColor === 'w' ? 1 : -1; // row offset from target to pawn
-                    for (const dc of [-1, 1]) {
-                        const pr = r + pawnAttackDir, pc = c + dc;
-                        if (this.inBounds(pr, pc) && this.board[pr][pc] === (attackerColor === 'w' ? 'P' : 'p')) return true;
-                    }
-                    // knights
-                    const knightDeltas = [[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]];
-                    for (const [dr, dc] of knightDeltas) {
-                        const nr = r + dr, nc = c + dc;
-                        if (this.inBounds(nr, nc) && this.board[nr][nc] === (attackerColor === 'w' ? 'N' : 'n')) return true;
-                    }
-                    // king (for castling checks, we treat king as any piece)
-                    const kingDeltas = [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]];
-                    for (const [dr, dc] of kingDeltas) {
-                        const nr = r + dr, nc = c + dc;
-                        if (this.inBounds(nr, nc) && this.board[nr][nc] === (attackerColor === 'w' ? 'K' : 'k')) return true;
-                    }
-                    // bishops/queens (diagonals)
-                    const diagonals = [[1,1],[1,-1],[-1,1],[-1,-1]];
-                    for (const [dr, dc] of diagonals) {
-                        let nr = r + dr, nc = c + dc;
-                        while (this.inBounds(nr, nc)) {
-                            const p = this.board[nr][nc];
-                            if (p) {
-                                if (this.color(p) === attackerColor && (p.toUpperCase() === 'B' || p.toUpperCase() === 'Q')) return true;
-                                break;
-                            }
-                            nr += dr; nc += dc;
-                        }
-                    }
-                    // rooks/queens (straight)
-                    const straights = [[1,0],[-1,0],[0,1],[0,-1]];
-                    for (const [dr, dc] of straights) {
-                        let nr = r + dr, nc = c + dc;
-                        while (this.inBounds(nr, nc)) {
-                            const p = this.board[nr][nc];
-                            if (p) {
-                                if (this.color(p) === attackerColor && (p.toUpperCase() === 'R' || p.toUpperCase() === 'Q')) return true;
-                                break;
-                            }
-                            nr += dr; nc += dc;
-                        }
-                    }
-                    return false;
-                }
-
-                isKingInCheck(color) {
-                    const king = color === 'w' ? 'K' : 'k';
-                    for (let r = 0; r < 8; r++) {
-                        for (let c = 0; c < 8; c++) {
-                            if (this.board[r][c] === king) {
-                                return this.squareAttacked(r, c, color === 'w' ? 'b' : 'w');
-                            }
-                        }
-                    }
-                    return true; // shouldn't happen
-                }
-
-                // Apply a move (assumes it's legal); modifies this state
-                makeMove(move) {
-                    const { fromRow, fromCol, toRow, toCol, promotion, enPassant, castle } = move;
-                    const piece = this.board[fromRow][fromCol];
-                    const captured = this.board[toRow][toCol];
-                    // handle en passant capture
-                    if (enPassant) {
-                        const capturedRow = fromRow; // pawn being captured is on same row as moving pawn's origin (e.g., white pawn on row 5 capturing black on row 5? Actually black pawn on toRow's original row? Let's carefully: For en passant, the captured pawn is on the same row as the moving pawn's start row, and the same column as the target column. So captured pawn position: (fromRow, toCol). Remove it.
-                        this.board[fromRow][toCol] = null;
-                    }
-                    // move piece
-                    this.board[toRow][toCol] = promotion ? (this.isWhite(piece) ? promotion.toUpperCase() : promotion.toLowerCase()) : piece;
-                    this.board[fromRow][fromCol] = null;
-                    // handle castling rook move
-                    if (castle) {
-                        const backRank = fromRow;
-                        if (castle === 'k') {
-                            this.board[backRank][5] = this.board[backRank][7];
-                            this.board[backRank][7] = null;
-                        } else if (castle === 'q') {
-                            this.board[backRank][3] = this.board[backRank][0];
-                            this.board[backRank][0] = null;
-                        }
-                    }
-                    // update castling rights
-                    let castling = this.castling;
-                    if (piece === 'K') castling = castling.replace('K', '').replace('Q', '');
-                    if (piece === 'k') castling = castling.replace('k', '').replace('q', '');
-                    if (piece === 'R') {
-                        if (fromCol === 7 && fromRow === 7) castling = castling.replace('K', '');
-                        if (fromCol === 0 && fromRow === 7) castling = castling.replace('Q', '');
-                    }
-                    if (piece === 'r') {
-                        if (fromCol === 7 && fromRow === 0) castling = castling.replace('k', '');
-                        if (fromCol === 0 && fromRow === 0) castling = castling.replace('q', '');
-                    }
-                    // if rook captured on its original square
-                    if (toRow === 7 && toCol === 7) castling = castling.replace('K', '');
-                    if (toRow === 7 && toCol === 0) castling = castling.replace('Q', '');
-                    if (toRow === 0 && toCol === 7) castling = castling.replace('k', '');
-                    if (toRow === 0 && toCol === 0) castling = castling.replace('q', '');
-                    this.castling = castling || '-';
-                    // en passant target
-                    if (piece.toUpperCase() === 'P' && Math.abs(toRow - fromRow) === 2) {
-                        const epRow = (fromRow + toRow) / 2;
-                        const epCol = fromCol;
-                        this.enPassant = String.fromCharCode(97 + epCol) + (8 - epRow);
-                    } else {
-                        this.enPassant = '-';
-                    }
-                    // halfmove clock (not strictly needed for AI)
-                    this.halfMoves = (piece.toUpperCase() === 'P' || captured || enPassant) ? 0 : this.halfMoves + 1;
-                    if (this.turn === 'b') this.fullMoves++;
-                    this.turn = this.turn === 'w' ? 'b' : 'w';
-                }
-
-                // Returns only legal moves for current turn
-                getLegalMoves() {
-                    const pseudo = this.generatePseudoMoves(this.turn);
-                    return pseudo.filter(move => {
-                        const clone = this.clone();
-                        clone.makeMove(move);
-                        return !clone.isKingInCheck(this.turn === 'w' ? 'b' : 'w'); // after move, check own king (who just moved) is not in check. The king's color before move was this.turn.
-                    });
-                }
-
-                isGameOver() {
-                    return this.getLegalMoves().length === 0;
-                }
-
-                gameResult() {
-                    if (!this.isGameOver()) return null;
-                    if (this.isKingInCheck(this.turn)) {
-                        return this.turn === 'w' ? 'black' : 'white'; // current side is in checkmate, so opponent wins
-                    }
-                    return 'draw'; // stalemate
-                }
-            }
-
-            // ---------- AI (weak minimax) ----------
-            function evaluate(state) {
-                const values = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
-                let score = 0;
-                for (let r = 0; r < 8; r++) {
-                    for (let c = 0; c < 8; c++) {
-                        const piece = state.board[r][c];
-                        if (!piece) continue;
-                        const val = values[piece.toLowerCase()];
-                        score += (piece === piece.toUpperCase() ? val : -val);
-                    }
-                }
-                // small random noise to make AI weaker and less predictable
-                score += Math.floor(Math.random() * 21) - 10;
-                return score;
-            }
-
-            function minimax(state, depth, alpha, beta, maximizing) {
-                if (depth === 0 || state.isGameOver()) {
-                    return evaluate(state);
-                }
-                const moves = state.getLegalMoves();
-                if (moves.length === 0) {
-                    // game over, no move possible
-                    if (state.isKingInCheck(state.turn)) {
-                        // checkmate: losing side's turn, so if maximizing (white) expects high, but white lost -> return -inf. But evaluate handles mate via king capture? Actually evaluate doesn't. We'll return a large negative/positive.
-                        return (state.turn === 'w') ? -99999 : 99999; // black wins if white mated
-                    }
-                    return 0; // stalemate
-                }
-                if (maximizing) {
-                    let maxEval = -Infinity;
-                    for (const move of moves) {
-                        const child = state.clone();
-                        child.makeMove(move);
-                        const val = minimax(child, depth - 1, alpha, beta, false);
-                        maxEval = Math.max(maxEval, val);
-                        alpha = Math.max(alpha, val);
-                        if (beta <= alpha) break;
-                    }
-                    return maxEval;
-                } else {
-                    let minEval = Infinity;
-                    for (const move of moves) {
-                        const child = state.clone();
-                        child.makeMove(move);
-                        const val = minimax(child, depth - 1, alpha, beta, true);
-                        minEval = Math.min(minEval, val);
-                        beta = Math.min(beta, val);
-                        if (beta <= alpha) break;
-                    }
-                    return minEval;
-                }
-            }
-
-            function getBestMove(state, depth = 2) {
-                const moves = state.getLegalMoves();
-                if (moves.length === 0) return null;
-                // simple move ordering: captures first (rough)
-                moves.sort((a, b) => {
-                    const aCapture = state.board[a.toRow][a.toCol] ? 1 : 0;
-                    const bCapture = state.board[b.toRow][b.toCol] ? 1 : 0;
-                    return bCapture - aCapture;
-                });
-                const isMaximizing = state.turn === 'w'; // white maximizes
-                let bestMove = moves[0];
-                let bestScore = isMaximizing ? -Infinity : Infinity;
-                for (const move of moves) {
-                    const child = state.clone();
-                    child.makeMove(move);
-                    const score = minimax(child, depth - 1, -Infinity, Infinity, !isMaximizing);
-                    if (isMaximizing) {
-                        if (score > bestScore) { bestScore = score; bestMove = move; }
-                    } else {
-                        if (score < bestScore) { bestScore = score; bestMove = move; }
-                    }
-                }
-                return bestMove;
-            }
-
-            // ---------- UI ----------
-            const boardEl = document.getElementById('board');
-            const statusEl = document.getElementById('status');
-            const newGameBtn = document.getElementById('new-game-btn');
-
-            let game = new Chess();
-            let selectedSquare = null; // { row, col }
-            let legalMovesForSelected = []; // array of { toRow, toCol }
-            let lastMove = null; // { fromRow, fromCol, toRow, toCol } for highlighting
-            let gameOver = false;
-            let aiThinking = false;
-
-            function renderBoard() {
-                boardEl.innerHTML = '';
-                for (let r = 0; r < 8; r++) {
-                    for (let c = 0; c < 8; c++) {
-                        const square = document.createElement('div');
-                        square.className = `square ${ (r + c) % 2 === 0 ? 'light' : 'dark' }`;
-                        square.dataset.row = r;
-                        square.dataset.col = c;
-                        const piece = game.board[r][c];
-                        square.textContent = piece ? pieceToUnicode(piece) : '';
-                        // highlight last move
-                        if (lastMove && ((r === lastMove.fromRow && c === lastMove.fromCol) || (r === lastMove.toRow && c === lastMove.toCol))) {
-                            square.classList.add('last-move');
-                        }
-                        // highlight selected
-                        if (selectedSquare && selectedSquare.row === r && selectedSquare.col === c) {
-                            square.classList.add('selected');
-                        }
-                        // highlight legal moves
-                        if (legalMovesForSelected.some(m => m.toRow === r && m.toCol === c)) {
-                            square.classList.add('legal-move');
-                        }
-                        square.addEventListener('click', () => squareClick(r, c));
-                        boardEl.appendChild(square);
-                    }
-                }
-            }
-
-            function pieceToUnicode(piece) {
-                const map = {
-                    'K': '♔', 'Q': '♕', 'R': '♖', 'B': '♗', 'N': '♘', 'P': '♙',
-                    'k': '♚', 'q': '♛', 'r': '♜', 'b': '♝', 'n': '♞', 'p': '♟'
-                };
-                return map[piece] || '';
-            }
-
-            function squareClick(row, col) {
-                if (gameOver || aiThinking || game.turn !== 'w') return;
-                const piece = game.board[row][col];
-                // if a square is selected and we click a legal move
-                if (selectedSquare) {
-                    const move = legalMovesForSelected.find(m => m.toRow === row && m.toCol === col);
-                    if (move) {
-                        makeHumanMove(move);
-                        return;
-                    }
-                    // else deselect or select new piece
-                    if (piece && game.color(piece) === 'w') {
-                        selectPiece(row, col);
-                    } else {
-                        clearSelection();
-                    }
-                } else {
-                    if (piece && game.color(piece) === 'w') {
-                        selectPiece(row, col);
-                    }
-                }
-            }
-
-            function selectPiece(row, col) {
-                selectedSquare = { row, col };
-                const allLegal = game.getLegalMoves();
-                legalMovesForSelected = allLegal.filter(m => m.fromRow === row && m.fromCol === col);
-                renderBoard();
-            }
-
-            function clearSelection() {
-                selectedSquare = null;
-                legalMovesForSelected = [];
-                renderBoard();
-            }
-
-            function makeHumanMove(move) {
-                game.makeMove(move);
-                lastMove = { fromRow: move.fromRow, fromCol: move.fromCol, toRow: move.toRow, toCol: move.toCol };
-                clearSelection();
-                renderBoard();
-                checkGameOver();
-                if (!gameOver && game.turn === 'b') {
-                    aiThinking = true;
-                    statusEl.textContent = 'AI thinking...';
-                    setTimeout(() => {
-                        aiMove();
-                        aiThinking = false;
-                        renderBoard();
-                        checkGameOver();
-                    }, 50); // small delay to show thinking
-                }
-            }
-
-            function aiMove() {
-                const move = getBestMove(game, 2); // depth 2 for weak but sensible
-                if (move) {
-                    game.makeMove(move);
-                    lastMove = { fromRow: move.fromRow, fromCol: move.fromCol, toRow: move.toRow, toCol: move.toCol };
-                }
-                if (!game.isGameOver()) {
-                    statusEl.textContent = 'Your turn (White)';
-                }
-            }
-
-            function checkGameOver() {
-                if (game.isGameOver()) {
-                    gameOver = true;
-                    const result = game.gameResult();
-                    if (result === 'white') statusEl.textContent = 'Checkmate! White wins.';
-                    else if (result === 'black') statusEl.textContent = 'Checkmate! Black wins.';
-                    else statusEl.textContent = 'Stalemate! Draw.';
-                }
-            }
-
-            function newGame() {
-                game = new Chess();
-                selectedSquare = null;
-                legalMovesForSelected = [];
-                lastMove = null;
-                gameOver = false;
-                aiThinking = false;
-                statusEl.textContent = 'Your turn (White)';
-                renderBoard();
-            }
-
-            newGameBtn.addEventListener('click', newGame);
-            // Initial render
-            renderBoard();
-        })();
-    </script>
+    // extra resize trigger for all
+    window.addEventListener('resize', () => {
+      ['limSlider','derivSlider','intSlider','chainSlider','taylorSlider','optSlider'].forEach(id => {
+        document.getElementById(id).dispatchEvent(new Event('input'));
+      });
+    });
+  })();
+</script>
 </body>
 </html>
